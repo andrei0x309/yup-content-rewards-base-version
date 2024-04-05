@@ -150,7 +150,6 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         require(err, "Invalid amount string");
         require(amount > 0, "Amount must be greater than 0");
 
-        require(amountStr.length > 0, "Amount string cannot be empty");
         address userAddress = toAddress(string(addressStr));
 
        (uint validityTs, bool errTs) = strToUint(string(validityTsStr));
@@ -173,9 +172,9 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
 
         uint lastClaim = lastClaimTs[userAddress];
 
-        if ( lastClaim > 0 &&  curentTime < lastClaim + maxValidity) {
-            string memory maxValidityS = Strings.toString(curentTime - lastClaim + maxValidity);
-            revert(string(abi.encodePacked("Claim already executed, wait ", maxValidityS, " seconds")));
+        if ( lastClaim > 0 &&  curentTime < lastClaim + (maxValidity * 2)) {
+            string memory maxValidityS = Strings.toString(curentTime - lastClaim + (maxValidity * 2 ));
+            revert(string(abi.encodePacked("Claim executed to recently, wait ", maxValidityS, " seconds to try another claim")));
         }
 
         if( ERC20(erc20TokenAddres).balanceOf(address(this)) < amount) {

@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 
 // import "hardhat/console.sol";
 
@@ -20,19 +22,21 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
  
 
     address erc20TokenAddres;
+    uint maxValidity;
 
     event ClaimExecuted(string claimString, address userAddress, uint256 amount, uint validityTs, bytes signature, address signer);
 
-    mapping (address => bytes) private lastUserClaim;
+    mapping (address => uint) public lastClaimTs;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    function initialize(address _initialOwner, address _initToken) public initializer {
+    function initialize(address _initialOwner, address _initToken, uint _maxValidity) initializer public {
         
         erc20TokenAddres = _initToken;
+        maxValidity = _maxValidity;
         
         __Pausable_init();
         __Ownable_init(_initialOwner);
@@ -154,8 +158,6 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         require(errTs, "Invalid timestamp string");
  
         uint curentTime = block.timestamp;
-        uint maxValidity = 60 * 60 * 6; // 6 hours
-
 
         if( curentTime > validityTs + maxValidity) {
             revert("Claim expired");
@@ -169,18 +171,21 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
 
         require(signer == owner(), "Invalid signature");
 
-        bytes memory lastClaim = lastUserClaim[userAddress];
+        uint lastClaim = lastClaimTs[userAddress];
 
-        if (lastClaim.length > 0 && keccak256(lastClaim) == keccak256(textBytes)) {
-            revert("Claim already processed");
+        if ( lastClaim > 0 &&  curentTime < lastClaim + maxValidity) {
+            string memory maxValidityS = Strings.toString(curentTime - lastClaim + maxValidity);
+            revert(string(abi.encodePacked("Claim already executed, wait ", maxValidityS, " seconds")));
         }
 
-        lastUserClaim[userAddress] = textBytes;
+        if( ERC20(erc20TokenAddres).balanceOf(address(this)) < amount) {
+            revert("Insufficient balance in contract");
+        }
 
-        // Here if contract does not have enough balance it will revert but claim will be used 
-        // and user will not be able to claim again, the order can be swaped in case the claim should not be used on fail transfer
         ERC20(erc20TokenAddres).transfer(userAddress, amount);
 
+        lastClaimTs[userAddress] = curentTime;
+ 
         emit ClaimExecuted(claimString, userAddress, amount, validityTs, signatureStr, userAddress);       
     }
 
@@ -201,6 +206,14 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         erc20TokenAddres = _initToken;
     }
 
+    function setMaxValidity(uint _maxValidity) public onlyOwner {
+        maxValidity = _maxValidity;
+    }
+
+    function getMaxValidity() public view returns (uint) {
+        return maxValidity;
+    }
+
     function transferTokens(address tokenAddress, address to, uint256 amount) public onlyOwner {
         ERC20(tokenAddress).transfer(to, amount);
     }
@@ -211,5 +224,17 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
 
     function withdrawNative(uint256 amount) public onlyOwner {
         payable(msg.sender).transfer(amount);
+    }
+
+    function getBalance(address tokenAddress) public view returns (uint256) {
+        return ERC20(tokenAddress).balanceOf(address(this));
+    }
+
+    function getOwner() public view returns (address) {
+        return owner();
+    }
+
+    function getTsOfLastClaim(address userAddress) public view returns (uint) {
+        return lastClaimTs[userAddress];
     }
 }

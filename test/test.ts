@@ -34,8 +34,9 @@ describe('Tests', () => {
     expect(deployTokenAddress).to.not.equal('')
   });
   it('deploy rewards contract', async () => {
- 
-    const args = [owner, deployTokenAddress]
+    
+    const maxClaimTs = 60 * 60 * 3
+    const args = [owner, deployTokenAddress, maxClaimTs]
     
     const Contract = await ethers.getContractFactory("YupBaseContentRewards");
    
@@ -184,7 +185,7 @@ describe('Tests', () => {
         }
         expect(failed).to.be.true
     }),
-    it('should fail to claim tokens due to repeated claim', async () => {
+    it('should fail to claim again if already claimed once within the same claim period', async () => {
         const amount = ethers.parseEther('100')
         const address = owner
         const ts = Math.trunc(Date.now() / 1000)
@@ -207,7 +208,7 @@ describe('Tests', () => {
         try {
             const tx = await contract.claimTokens(...claimArgs)
             expect(tx.hash).to.not.equal('')
-        } catch {
+        } catch  {
             failed = true
         }
 

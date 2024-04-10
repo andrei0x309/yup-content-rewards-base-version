@@ -20,7 +20,7 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
     using BytesLib for bytes;
     using Address for address;
  
-
+    bool isDestroyed = false;
     address erc20TokenAddres;
     uint maxValidity;
 
@@ -33,6 +33,7 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         _disableInitializers();
     }
 
+    // INIT and contract control functions
     function initialize(address _initialOwner, address _initToken, uint _maxValidity) initializer public {
         
         erc20TokenAddres = _initToken;
@@ -42,21 +43,35 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         __Ownable_init(_initialOwner);
         __UUPSUpgradeable_init();
     }
-
-    function pause() public onlyOwner {
-        _pause();
-    }
-
-    function unpause() public onlyOwner {
-        _unpause();
-    }
-
+    
     function _authorizeUpgrade(address newImplementation)
         internal
         onlyOwner
         override
     {}
  
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    function unpause() public onlyOwner {
+        if (isDestroyed) {
+            revert("Contract is destroyed");
+        }
+        _unpause();
+    }
+
+    function isPaused() public view returns (bool) {
+        return paused();
+    }
+
+    function destroy() public onlyOwner {
+        isDestroyed = true;
+        payable(owner()).transfer(address(this).balance);
+        _pause();
+    }
+
+    // UTIL FUNCTIONS
 
     function getDelimiterCountAndPos (bytes memory textBytes) private pure returns (uint, uint[] memory) {
         uint substringCount = 0;
@@ -123,7 +138,13 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         return 0;
     }
 
+
+    // PUBLIC FUNCTIONS
+
     function claimTokens (string memory claimString) public {
+        if (isDestroyed) {
+            revert("Contract is destroyed");
+        }
         require(!paused(), "Contract is paused");
 
         bytes memory textBytes = bytes(claimString);
@@ -188,12 +209,30 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         emit ClaimExecuted(claimString, userAddress, amount, validityTs, signatureStr, userAddress);       
     }
 
-    function setContractToken(address newTokenAddress) public onlyOwner {
-        erc20TokenAddres = newTokenAddress;
+    function getMaxValidity() public view returns (uint) {
+        return maxValidity;
+    }
+
+    function getBalance(address tokenAddress) public view returns (uint256) {
+        return ERC20(tokenAddress).balanceOf(address(this));
+    }
+
+    function getOwner() public view returns (address) {
+        return owner();
+    }
+
+    // ONLY OWNER FUNCTIONS
+
+    function getTsOfLastClaim(address userAddress) public view returns (uint) {
+        return lastClaimTs[userAddress];
     }
 
     function getContractToken() public view returns (address) {
         return erc20TokenAddres;
+    }
+
+    function setContractToken(address newTokenAddress) public onlyOwner {
+        erc20TokenAddres = newTokenAddress;
     }
 
     function setOwner(address newOwner) public onlyOwner {
@@ -209,11 +248,7 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         maxValidity = _maxValidity;
     }
 
-    function getMaxValidity() public view returns (uint) {
-        return maxValidity;
-    }
-
-    function transferTokens(address tokenAddress, address to, uint256 amount) public onlyOwner {
+        function transferTokens(address tokenAddress, address to, uint256 amount) public onlyOwner {
         ERC20(tokenAddress).transfer(to, amount);
     }
 
@@ -225,15 +260,4 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         payable(msg.sender).transfer(amount);
     }
 
-    function getBalance(address tokenAddress) public view returns (uint256) {
-        return ERC20(tokenAddress).balanceOf(address(this));
-    }
-
-    function getOwner() public view returns (address) {
-        return owner();
-    }
-
-    function getTsOfLastClaim(address userAddress) public view returns (uint) {
-        return lastClaimTs[userAddress];
-    }
 }

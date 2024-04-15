@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat test",
-    "deploy": "hardhat run --network mumbai scripts/deploy.ts",
-    "actions": "hardhat run --network mumbai scripts/actions.ts"
+    "deploy": "hardhat run --network baseSepolia scripts/deploy.ts",
+    "actions": "hardhat run --network baseSepolia scripts/actions.ts",
+    "flatten:rewards": "hardhat flatten contracts/YupBaseContentRewards.sol > flatten/YupBaseContentRewards.sol"
   },
   "author": "",
   "license": "MIT",

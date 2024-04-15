@@ -36,7 +36,7 @@ describe('Tests', () => {
   it('deploy rewards contract', async () => {
     
     const maxClaimTs = 60 * 60 * 3
-    const args = [owner, deployTokenAddress, maxClaimTs]
+    const args = [owner, deployTokenAddress, owner, maxClaimTs]
     
     const Contract = await ethers.getContractFactory("YupBaseContentRewards");
    

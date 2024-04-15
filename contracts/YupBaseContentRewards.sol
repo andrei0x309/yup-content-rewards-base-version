@@ -20,7 +20,7 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
     using BytesLib for bytes;
     using Address for address;
  
-    bool isDestroyed = false;
+    bool isDestroyed;
     address erc20TokenAddres;
     uint maxValidity;
 
@@ -28,17 +28,22 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
 
     mapping (address => uint) public lastClaimTs;
 
+    address certifySigner;
+
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
     // INIT and contract control functions
-    function initialize(address _initialOwner, address _initToken, uint _maxValidity) initializer public {
+    function initialize(address _initialOwner, address _initToken, address _certifySigner, uint _maxValidity) initializer public {
         
         erc20TokenAddres = _initToken;
+        certifySigner = _certifySigner;
         maxValidity = _maxValidity;
-        
+        isDestroyed = false;
+
         __Pausable_init();
         __Ownable_init(_initialOwner);
         __UUPSUpgradeable_init();
@@ -189,7 +194,7 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
 
         address signer = ECDSA.recover(messageHash,sig);
 
-        require(signer == owner(), "Invalid signature");
+        require(signer == certifySigner, "Invalid signature");
 
         uint lastClaim = lastClaimTs[userAddress];
 
@@ -209,6 +214,10 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
         emit ClaimExecuted(claimString, userAddress, amount, validityTs, signatureStr, userAddress);       
     }
 
+    function getCertifySigner() public view returns (address) {
+        return certifySigner;
+    }
+
     function getMaxValidity() public view returns (uint) {
         return maxValidity;
     }
@@ -222,6 +231,10 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
     }
 
     // ONLY OWNER FUNCTIONS
+
+    function setCertifySigner(address newSigner) public onlyOwner {
+        certifySigner = newSigner;
+    }
 
     function getTsOfLastClaim(address userAddress) public view returns (uint) {
         return lastClaimTs[userAddress];

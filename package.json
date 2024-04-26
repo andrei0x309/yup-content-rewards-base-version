@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat test",
-    "deploy": "hardhat run --network baseSepolia scripts/deploy.ts",
-    "actions": "hardhat run --network baseSepolia scripts/actions.ts",
+    "deploy:test": "cross-env IS_TESTING=true hardhat run --network baseSepolia scripts/deploy.ts",
+    "actions:test": "cross-env IS_TESTING=true hardhat run --network baseSepolia scripts/actions.ts",
+    "deploy:mainnet": "hardhat run --network base scripts/deploy.ts",
+    "actions:mainnet": "hardhat run --network base scripts/actions.ts",
     "flatten:rewards": "hardhat flatten contracts/YupBaseContentRewards.sol > flatten/YupBaseContentRewards.sol"
   },
   "author": "",
@@ -26,6 +28,7 @@
     "@types/mocha": "^9.1.0",
     "@types/node": "^16.0.0",
     "chai": "^4.2.0",
+    "cross-env": "^7.0.3",
     "ethers": "^6.6.0",
     "hardhat": "^2.19.2",
     "hardhat-gas-reporter": "^1.0.8",

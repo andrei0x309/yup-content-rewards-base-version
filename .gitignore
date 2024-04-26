@@ -13,5 +13,5 @@ node_modules
 /coverage
 /coverage.json
 
-/scripts
+/scripts/.openzeppelin
 /flatten

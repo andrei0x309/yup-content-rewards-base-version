@@ -198,8 +198,8 @@ contract YupBaseContentRewards is Initializable, PausableUpgradeable, OwnableUpg
 
         uint lastClaim = lastClaimTs[userAddress];
 
-        if ( lastClaim > 0 &&  curentTime < lastClaim + (maxValidity * 2)) {
-            string memory maxValidityS = Strings.toString(curentTime - lastClaim + (maxValidity * 2 ));
+        if ( lastClaim > 0 && curentTime < (lastClaim + (maxValidity + 3 ))) {
+            string memory maxValidityS = Strings.toString((lastClaim + (maxValidity + 3 )) - curentTime);
             revert(string(abi.encodePacked("Claim executed to recently, wait ", maxValidityS, " seconds to try another claim")));
         }
 

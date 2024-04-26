@@ -5,9 +5,7 @@ import '@openzeppelin/hardhat-upgrades'
 
 const PK = vars.get("PK") 
 
-const POLYGON_RPC = vars.get("POLYGON_RPC")
 
- 
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.25",
@@ -24,10 +22,6 @@ const config: HardhatUserConfig = {
     }
   },
   networks: {
-    polygon: {
-      url: POLYGON_RPC,
-      accounts: [PK]
-    },
     hardhat: {
       accounts: [
         {privateKey: PK, balance: "1000000000000000000000000"}
@@ -36,6 +30,10 @@ const config: HardhatUserConfig = {
     baseSepolia: {
       url: "https://sepolia.base.org",
       accounts: [PK] 
+    },
+    base: {
+      url: "https://base-rpc.publicnode.com",
+      accounts: [PK]
     },
     amoy: {
       url: "https://rpc-amoy.polygon.technology/",
